@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Background Remover</title>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            color: #333;
+            text-align: center;
+            margin: 0;
+            padding: 20px;
+        }
+
+        h1 {
+            margin-bottom: 20px;
+            color: #4CAF50;
+        }
+
+        #upload-section {
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            max-width: 500px;
+            margin: auto;
+        }
+
+        #upload-form {
+            margin-bottom: 20px;
+            position: relative;
+            margin-top: 10px;
+            padding: 50px;
+            border: 2px dashed #ddd;
+            border-radius: 10px;
+            cursor: pointer;
+        }
+
+        #upload-form:hover {
+            background-color: #f9f9f9;
+        }
+
+        #upload-icon {
+            font-size: 48px;
+            color: #4CAF50;
+        }
+
+        #upload-text {
+            font-size: 18px;
+            margin-top: 10px;
+        }
+
+        input[type="file"] {
+            display: none;
+        }
+
+        #result {
+            margin-top: 20px;
+        }
+
+        #image-preview {
+            width: 300px;
+            margin-top: 20px;
+            border: 2px solid #4CAF50;
+            border-radius: 10px;
+        }
+
+        #downloadBtn {
+            display: none;
+            margin-top: 10px;
+            margin-left: 45%;
+            padding: 10px 15px;
+            background-color: black;
+            border: none;
+            color: white;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 16px;
+        }
+
+        #download-icon {
+            font-size: 48px;
+            color: #ffffff;
+        }
+
+        #removeBtn {
+            display: none;
+            margin-top: 10px;
+            padding: 10px 15px;
+            background-color: #FF4136;
+            border: none;
+            margin-left: 38%;
+            color: white;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+
+        #removeBtn:hover {
+            background-color: #C82333;
+        }
+
+        #downloadBtn:hover {
+            background-color: #0056b3;
+        }
+
+        /* Loading GIF */
+        #loading {
+            display: none;
+            margin-top: 20px;
+            margin-left: 40%;
+            width: 100px;
+            height: 100px;
+        }
+
+        .material-symbols-outlined {
+            font-variation-settings:
+            'FILL' 0,
+            'wght' 400,
+            'GRAD' 0,
+            'opsz' 24;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>Background Remover</h1>
+
+    <div id="upload-section">
+        <!-- Upload Form -->
+        <form id="upload-form" enctype="multipart/form-data">
+            <div id="drop-zone">
+                <span class="material-symbols-outlined" id="upload-icon">upload</span>
+                <div id="upload-text">Drag and drop an image or <label for="fileInput" style="cursor: pointer; color: #007BFF;">browse to upload</label></div>
+                <input type="file" id="fileInput" name="image" accept="image/*">
+            </div>
+        </form>
+
+        <!-- Loading GIF shown while processing -->
+        <img id="loading" src="buffering.gif" alt="Loading..." width="100px" />
+
+        <div id="result"></div>
+
+        <!-- Download Button -->
+        <div style="text-align:center; margin-top: 20px;">
+            <button id="downloadBtn" onclick="downloadImage()">
+                <span class="material-symbols-outlined" id="download-icon">download</span>
+            </button>
+        </div>
+
+        <!-- Remove Button -->
+        <div style="text-align:center; margin-top: 20px;">
+            <button id="removeBtn" onclick="removeImage()">
+                Remove Image
+            </button>
+        </div>
+    </div>
+
+    <script>
+        let processedImageURL = ''; // Store the URL of the processed image
+
+        // When an image is uploaded
+        document.getElementById('fileInput').addEventListener('change', async (event) => {
+            event.preventDefault();
+            const fileInput = document.getElementById('fileInput');
+            const file = fileInput.files[0];
+
+            if (!file) {
+                alert('Please upload an image');
+                return;
+            }
+
+            // Show loading GIF and hide form
+            document.getElementById('upload-form').style.display = 'none';
+            document.getElementById('loading').style.display = 'block';
+
+            const formData = new FormData();
+            formData.append('image', file);
+
+            // Simulate API call to remove background
+            const response = await fetch('/remove-bg', {
+                method: 'POST',
+                body: formData
+            });
+
+            if (response.ok) {
+                const blob = await response.blob();
+                processedImageURL = URL.createObjectURL(blob);
+
+                // Show the processed image
+                const resultDiv = document.getElementById('result');
+                const img = document.createElement('img');
+                img.src = processedImageURL;
+                img.id = 'image-preview';
+                resultDiv.innerHTML = '';
+                resultDiv.appendChild(img);
+
+                // Hide loading GIF and show the download button
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('downloadBtn').style.display = 'block';
+                document.getElementById('removeBtn').style.display = 'block';
+            } else {
+                alert('Error removing background');
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('upload-form').style.display = 'block';
+            }
+        });
+
+        // Function to download the processed image
+        function downloadImage() {
+            const a = document.createElement('a');
+            a.href = processedImageURL;
+            a.download = 'processed_image.png';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+        }
+
+        // Function to remove the uploaded image and reset the form
+        function removeImage() {
+            document.getElementById('result').innerHTML = '';
+            document.getElementById('downloadBtn').style.display = 'none';
+            document.getElementById('removeBtn').style.display = 'none';
+            document.getElementById('upload-form').style.display = 'block';
+            document.getElementById('fileInput').value = ''; // Reset file input
+        }
+    </script>
+</body>
+
+</html>
